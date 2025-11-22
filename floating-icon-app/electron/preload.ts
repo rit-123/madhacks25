@@ -19,6 +19,9 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
     return ipcRenderer.invoke(channel, ...omit)
   },
 
+  // Recording API
+  startRecording: () => ipcRenderer.invoke('start-recording'),
+
   // You can expose other APTs you need here.
   // ...
 })

@@ -1,7 +1,14 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import * as fs from 'fs'
+import { config } from 'dotenv'
+import { AudioRecorder } from './recorder'
+import { FishAudioTranscriber } from './transcriber'
+
+// Load environment variables
+config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '.env') })
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -15,6 +22,8 @@ export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
 
 let win: BrowserWindow | null
+let recorder: AudioRecorder | null = null
+let transcriber: FishAudioTranscriber | null = null
 
 function createWindow() {
   win = new BrowserWindow({
@@ -52,6 +61,54 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow()
+  }
+})
+
+// IPC Handlers for recording and transcription
+ipcMain.handle('start-recording', async () => {
+  try {
+    // Initialize recorder and transcriber if not already done
+    if (!recorder) {
+      recorder = new AudioRecorder();
+    }
+
+    if (!transcriber) {
+      const apiKey = process.env.FISH_AUDIO_API_KEY;
+      if (!apiKey) {
+        throw new Error('FISH_AUDIO_API_KEY not found in environment variables');
+      }
+      transcriber = new FishAudioTranscriber(apiKey);
+    }
+
+    // Create temp file path
+    const tempDir = app.getPath('temp');
+    const outputFile = path.join(tempDir, `recording_${Date.now()}.wav`);
+
+    console.log('Starting recording...');
+
+    // Start recording (will stop on silence)
+    await recorder.startRecording(outputFile);
+
+    console.log('Recording complete, starting transcription...');
+
+    // Transcribe the audio
+    const result = await transcriber.transcribe(outputFile);
+
+    // Clean up the temp file
+    if (fs.existsSync(outputFile)) {
+      fs.unlinkSync(outputFile);
+    }
+
+    if (result && (result.text || result.transcription)) {
+      const transcribedText = result.text || result.transcription;
+      console.log('Transcription:', transcribedText);
+      return { success: true, text: transcribedText, fullResult: result };
+    } else {
+      return { success: false, error: 'No transcription result' };
+    }
+  } catch (error: any) {
+    console.error('Recording/Transcription error:', error);
+    return { success: false, error: error.message };
   }
 })
 
