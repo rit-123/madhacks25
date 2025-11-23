@@ -40,6 +40,12 @@ function createWindow() {
     resizable: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
+      // Fix GPU and network crashes
+      nodeIntegration: false,
+      contextIsolation: true,
+      webSecurity: true,
+      // Disable GPU acceleration to prevent crashes
+      offscreen: false,
     },
   })
 
@@ -158,5 +164,16 @@ ipcMain.handle('start-recording', async () => {
     return { success: false, error: error.message };
   }
 })
+
+// Disable GPU acceleration to prevent crashes
+app.disableHardwareAcceleration()
+
+// Add command line switches to prevent GPU and network crashes
+app.commandLine.appendSwitch('disable-gpu')
+app.commandLine.appendSwitch('disable-gpu-sandbox')
+app.commandLine.appendSwitch('disable-software-rasterizer')
+app.commandLine.appendSwitch('disable-background-timer-throttling')
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows')
+app.commandLine.appendSwitch('disable-renderer-backgrounding')
 
 app.whenReady().then(createWindow)
