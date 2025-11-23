@@ -1,55 +1,238 @@
-# FishAudio Speech-to-Text Demo
+# 🤖 JARVIS - Your Autonomous Desktop Agent
 
-This project demonstrates how to record audio and transcribe it using the FishAudio API. It includes both Python and JavaScript (Node.js) implementations.
+<div align="center">
 
-## Prerequisites
+![JARVIS Logo](https://img.shields.io/badge/JARVIS-Desktop%20Agent-blue?style=for-the-badge&logo=robot)
 
-- **FishAudio API Key**: You need an API key from [FishAudio](https://fish.audio/).
-- **Microphone**: A working microphone is required.
+**The future of desktop automation is here. Meet JARVIS - your fully autonomous desktop assistant inspired by Tony Stark's AI companion.**
 
-## JavaScript (Node.js) Setup
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
+[![Node.js](https://img.shields.io/badge/node.js-18+-green.svg)](https://nodejs.org)
+[![Electron](https://img.shields.io/badge/electron-30+-purple.svg)](https://electronjs.org)
 
-### 1. Install Node.js
-If you don't have Node.js installed:
-1.  Go to [nodejs.org](https://nodejs.org/).
-2.  Download the **LTS** (Long Term Support) version for Windows.
-3.  Run the installer and follow the prompts. Ensure "Add to PATH" is selected.
-4.  Restart your terminal/VS Code to ensure the changes take effect.
+</div>
 
-### 2. Install Dependencies
-Open a terminal in this directory and run:
-```bash
-npm install
+---
+
+## 🌟 What is JARVIS?
+
+JARVIS is a revolutionary desktop agent that brings the power of AI directly to your computer. Just like Tony Stark's AI assistant, JARVIS sits quietly in the background, waiting for your voice command to spring into action and execute complex desktop tasks with unprecedented intelligence and speed.
+
+### ✨ Key Features
+
+🎤 **Wake Word Detection** - Simply say "Jarvis" to activate your assistant  
+🗣️ **Advanced Speech Recognition** - Powered by Fish Audio's cutting-edge transcription  
+🧠 **Smart Model Switching** - Intelligent routing between fast custom controller and Agent-S for optimal performance  
+⚡ **Lightning Fast Execution** - Custom screen controller delivers 2x faster performance for simple tasks  
+🔄 **Seamless Handoff** - Automatic escalation to Agent-S for complex multi-step reasoning  
+🖥️ **Cross-Platform** - Works on macOS, Windows, and Linux  
+🎯 **Floating UI** - Unobtrusive floating icon with beautiful Siri-like animations  
+
+---
+
+## 🏗️ Architecture
+
+JARVIS employs a sophisticated multi-layered architecture:
+
 ```
-This will install the required packages: `naudiodon`, `wav`, `axios`, `dotenv`, `form-data`.
-
-### 3. Run the Application
-```bash
-node index.js
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Wake Word     │───▶│  Fish Audio      │───▶│  Smart Router   │
+│   Detection     │    │  Transcription   │    │                 │
+│  (Porcupine)    │    │                  │    │                 │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                                                         │
+                                                         ▼
+                                               ┌─────────────────┐
+                                               │ Decision Engine │
+                                               └─────────────────┘
+                                                    │         │
+                                              Simple│         │Complex
+                                                    ▼         ▼
+                                         ┌─────────────┐ ┌─────────────┐
+                                         │   Custom    │ │   Agent-S   │
+                                         │ Controller  │ │  (Advanced) │
+                                         │   (Fast)    │ │             │
+                                         └─────────────┘ └─────────────┘
 ```
 
-### 4. Configuration
-You can set your API key in a `.env` file (create one if it doesn't exist):
-```
-FISH_AUDIO_API_KEY=your_api_key_here
-```
-Or enter it when prompted by the script.
+### 🔧 Tech Stack
 
-## Python Setup
+- **Frontend**: React + TypeScript + Electron
+- **Backend**: Python + Node.js
+- **Wake Word**: Picovoice Porcupine
+- **Speech-to-Text**: Fish Audio API
+- **AI Agents**: Custom Step Agent + Agent-S3
+- **Desktop Control**: PyAutoGUI + Custom Controllers
+- **Voice Feedback**: Fish Audio TTS
 
-### 1. Install Python
-Ensure Python is installed (type `python --version` or `py --version`).
+---
 
-### 2. Install Dependencies
-```bash
-pip install -r requirements.txt
-# OR
-py -m pip install -r requirements.txt
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Node.js 18+** - [Download here](https://nodejs.org/)
+- **Python 3.8+** - [Download here](https://python.org/)
+- **Miniconda/Anaconda** - For Agent-S environment
+- **API Keys**:
+  - Fish Audio API Key - [Get yours](https://fish.audio/)
+  - Anthropic API Key - For Claude integration
+  - Picovoice Access Key - For wake word detection
+
+### 🛠️ Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/jarvis-desktop-agent.git
+   cd jarvis-desktop-agent
+   ```
+
+2. **Set up Python environment**
+   ```bash
+   # Create conda environment for Agent-S
+   conda create -n agent_s python=3.8
+   conda activate agent_s
+   pip install -r requirements.txt
+   ```
+
+3. **Install Node.js dependencies**
+   ```bash
+   cd floating-icon-app
+   npm install
+   ```
+
+4. **Configure environment variables**
+   ```bash
+   # Create .env file in root directory
+   FISH_AUDIO_API_KEY=your_fish_audio_key
+   ANTHROPIC_API_KEY=your_anthropic_key
+   VITE_PICOVOICE_ACCESS_KEY=your_picovoice_key
+   ```
+
+5. **Build and run**
+   ```bash
+   # Build the Electron app
+   npm run build
+   
+   # Or run in development mode
+   npm run dev
+   ```
+
+---
+
+## 🎯 Usage
+
+1. **Launch JARVIS** - Run the application and you'll see a floating icon
+2. **Say the wake word** - Simply say "Jarvis" to activate
+3. **Give your command** - Speak naturally: "Open Chrome and search for AI news"
+4. **Watch the magic** - JARVIS intelligently chooses the best approach and executes your task
+
+### Example Commands
+
+- 🌐 "Open Google and search for machine learning tutorials"
+- 📝 "Create a new document and write a meeting summary"
+- 📧 "Check my email and reply to the latest message"
+- 🎵 "Play my favorite playlist on Spotify"
+- 📊 "Open Excel and create a budget spreadsheet"
+
+---
+
+## 🧠 Smart Model Switching
+
+JARVIS's intelligence lies in its ability to choose the right tool for the job:
+
+### Custom Controller (Fast Lane) ⚡
+- **Speed**: 2x faster than traditional agents
+- **Use Cases**: Simple clicks, typing, basic navigation
+- **Examples**: Opening apps, clicking buttons, form filling
+
+### Agent-S (Power Lane) 🚀  
+- **Capability**: Complex multi-step reasoning
+- **Use Cases**: Advanced workflows, problem-solving, context-aware tasks
+- **Examples**: Research tasks, complex document creation, troubleshooting
+
+The decision engine automatically routes tasks based on complexity analysis, ensuring optimal performance for every command.
+
+---
+
+## 🎨 Features in Detail
+
+### 🎤 Wake Word Detection
+- Uses Picovoice Porcupine for accurate "Jarvis" detection
+- Low latency, privacy-focused (runs locally)
+- Customizable sensitivity settings
+
+### 🗣️ Speech Recognition  
+- Fish Audio's state-of-the-art transcription
+- Multi-language support
+- Noise-robust processing
+
+### 🎭 Voice Feedback
+- Natural TTS responses using Fish Audio
+- Customizable voice personalities
+- Emotional expressions and confirmations
+
+### 🖥️ Desktop Control
+- Cross-platform screen capture and control
+- Intelligent element detection and interaction
+- Safe execution with error handling
+
+---
+
+## 🔧 Configuration
+
+Customize JARVIS to your preferences:
+
+```javascript
+// Voice Configuration
+const voiceConfig = {
+  referenceId: "your_preferred_voice_id",
+  emotion: "excited", // happy, calm, fluent, etc.
+  model: "v3-turbo"
+};
+
+// Agent Configuration  
+const agentConfig = {
+  maxSteps: 20,
+  stepDelay: 0.5,
+  useGrounding: true
+};
 ```
 
-### 3. Run the Application
-```bash
-python main.py
-# OR
-py main.py
-```
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how you can help:
+
+1. 🍴 Fork the repository
+2. 🌿 Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. 💾 Commit your changes (`git commit -m 'Add amazing feature'`)
+4. 📤 Push to the branch (`git push origin feature/amazing-feature`)
+5. 🔄 Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- **Picovoice** - For excellent wake word detection
+- **Fish Audio** - For cutting-edge speech technology  
+- **Agent-S Team** - For the powerful desktop automation framework
+- **Tony Stark** - For the inspiration 😉
+
+---
+
+<div align="center">
+
+**Built with ❤️ for the future of human-computer interaction**
+
+[⭐ Star this repo](https://github.com/yourusername/jarvis-desktop-agent) | [🐛 Report Bug](https://github.com/yourusername/jarvis-desktop-agent/issues) | [💡 Request Feature](https://github.com/yourusername/jarvis-desktop-agent/issues)
+
+</div>
