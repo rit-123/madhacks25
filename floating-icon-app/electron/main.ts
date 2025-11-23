@@ -7,6 +7,7 @@ import { spawn } from 'child_process'
 import { config } from 'dotenv'
 import { AudioRecorder } from './recorder'
 import { FishAudioTranscriber } from './transcriber'
+import { TTSConfirmation } from './tts-confirmation'
 
 // Load environment variables
 config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '.env') })
@@ -25,6 +26,7 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 let win: BrowserWindow | null
 let recorder: AudioRecorder | null = null
 let transcriber: FishAudioTranscriber | null = null
+let ttsConfirmation: TTSConfirmation | null = null
 
 function createWindow() {
   win = new BrowserWindow({
@@ -81,6 +83,14 @@ ipcMain.handle('start-recording', async () => {
       transcriber = new FishAudioTranscriber(apiKey);
     }
 
+    if (!ttsConfirmation) {
+      const apiKey = process.env.FISH_AUDIO_API_KEY;
+      if (!apiKey) {
+        throw new Error('FISH_AUDIO_API_KEY not found in environment variables');
+      }
+      ttsConfirmation = new TTSConfirmation(apiKey);
+    }
+
     // Create temp file path
     const tempDir = app.getPath('temp');
     const outputFile = path.join(tempDir, `recording_${Date.now()}.wav`);
@@ -103,6 +113,11 @@ ipcMain.handle('start-recording', async () => {
     if (result && (result.text || result.transcription)) {
       const transcribedText = (result.text || result.transcription) as string;
       console.log('Transcription:', transcribedText);
+
+      // Play confirmation sound
+      if (ttsConfirmation) {
+        await ttsConfirmation.playConfirmation();
+      }
 
       // Execute agent_s3.py with the transcribed text
       console.log('Executing Agent S3...');

@@ -13,9 +13,12 @@
     "@picovoice/porcupine-react": "^3.0.3",
     "@picovoice/web-voice-processor": "^4.0.9",
     "axios": "^1.13.2",
+    "bufferutil": "^4.0.9",
+    "fish-audio": "^0.0.3",
     "form-data": "^4.0.5",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "utf-8-validate": "^6.0.5"
   },
   "devDependencies": {
     "@types/dotenv": "^6.1.1",

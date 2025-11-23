@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { usePorcupine } from '@picovoice/porcupine-react'
-import electronLogo from '/electron-vite.svg'
+import SiriAnimation from './components/SiriAnimation'
 import './App.css'
 
 // Extend Window interface to include ipcRenderer
@@ -22,11 +22,9 @@ function App() {
   const {
     keywordDetection,
     isLoaded,
-    isListening: isPorcupineListening,
     error,
     init,
     start,
-    stop,
     release,
   } = usePorcupine()
 
@@ -103,15 +101,7 @@ function App() {
   return (
     <div className={`draggable-icon ${isListening ? 'listening' : ''}`}>
       {error && <div className="error">Error: {error.message}</div>}
-      {isListening ? (
-        <div className="listening-indicator">
-          <div className="dot"></div>
-          <div className="dot"></div>
-          <div className="dot"></div>
-        </div>
-      ) : (
-        <img src={electronLogo} className="logo" alt="Electron logo" />
-      )}
+      <SiriAnimation isListening={isListening} />
     </div>
   )
 }
