@@ -3,6 +3,7 @@ import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import * as fs from 'fs'
+import { spawn } from 'child_process'
 import { config } from 'dotenv'
 import { AudioRecorder } from './recorder'
 import { FishAudioTranscriber } from './transcriber'
@@ -100,14 +101,45 @@ ipcMain.handle('start-recording', async () => {
     }
 
     if (result && (result.text || result.transcription)) {
-      const transcribedText = result.text || result.transcription;
+      const transcribedText = (result.text || result.transcription) as string;
       console.log('Transcription:', transcribedText);
+
+      // Execute agent_s3.py with the transcribed text
+      console.log('Executing Agent S3...');
+      const appRoot = process.env.APP_ROOT || path.join(__dirname, '..');
+      const agentScriptPath = path.join(appRoot, 'agent-s2-example', 'agent_s3.py');
+
+      // Use the specific conda environment python
+      const pythonPath = '/opt/miniconda3/envs/agent_s/bin/python';
+
+      await new Promise<void>((resolve, reject) => {
+        const pythonProcess = spawn(pythonPath, [agentScriptPath, transcribedText], {
+          env: process.env as NodeJS.ProcessEnv, // Pass environment variables
+          stdio: 'inherit' // Pipe stdout/stderr to parent
+        }) as any;
+
+        pythonProcess.on('close', (code: number | null) => {
+          if (code === 0) {
+            console.log('Agent S3 completed successfully');
+            resolve();
+          } else {
+            console.error(`Agent S3 exited with code ${code}`);
+            reject(new Error(`Agent S3 exited with code ${code}`));
+          }
+        });
+
+        pythonProcess.on('error', (err: Error) => {
+          console.error('Failed to start Agent S3:', err);
+          reject(err);
+        });
+      });
+
       return { success: true, text: transcribedText, fullResult: result };
     } else {
       return { success: false, error: 'No transcription result' };
     }
   } catch (error: any) {
-    console.error('Recording/Transcription error:', error);
+    console.error('Recording/Transcription/Agent error:', error);
     return { success: false, error: error.message };
   }
 })
