@@ -125,35 +125,141 @@ ipcMain.handle('start-recording', async () => {
         await ttsConfirmation.playConfirmation();
       }
 
-      // Execute agent_s3.py with the transcribed text
-      console.log('Executing Agent S3...');
+      // First try step_agent run_agent function with the transcribed text
+      console.log('Executing Step Agent...');
       const appRoot = process.env.APP_ROOT || path.join(__dirname, '..');
-      const agentScriptPath = path.join(appRoot, 'agent-s2-example', 'agent_s3.py');
-
-      // Use the specific conda environment python
       const pythonPath = '/opt/miniconda3/envs/agent_s/bin/python';
 
-      await new Promise<void>((resolve, reject) => {
-        const pythonProcess = spawn(pythonPath, [agentScriptPath, transcribedText], {
-          env: process.env as NodeJS.ProcessEnv, // Pass environment variables
-          stdio: 'inherit' // Pipe stdout/stderr to parent
-        }) as any;
+      let stepAgentResult: any = null;
+      let shouldFallbackToAgentS = false;
 
-        pythonProcess.on('close', (code: number | null) => {
-          if (code === 0) {
-            console.log('Agent S3 completed successfully');
-            resolve();
-          } else {
-            console.error(`Agent S3 exited with code ${code}`);
-            reject(new Error(`Agent S3 exited with code ${code}`));
-          }
+      try {
+        // Call run_agent function and capture its output
+        stepAgentResult = await new Promise<any>((resolve) => {
+          let outputData = '';
+          
+          const pythonProcess = spawn(pythonPath, ['-c', `
+import sys
+import json
+import os
+sys.path.append('${path.join(appRoot, '..')}')
+sys.path.append('${path.join(appRoot, '..', 'actions')}')
+os.chdir('${path.join(appRoot, '..', 'actions')}')
+from step_agent import run_agent
+
+# Set up environment
+os.environ['ANTHROPIC_API_KEY'] = os.environ.get('ANTHROPIC_API_KEY', '')
+
+try:
+    result = run_agent("${transcribedText.replace(/"/g, '\\"')}")
+    # Output result as JSON for parsing
+    print("STEP_AGENT_RESULT_START")
+    print(json.dumps(result))
+    print("STEP_AGENT_RESULT_END")
+except Exception as e:
+    print(f"Error running step agent: {e}")
+    sys.exit(1)
+          `], {
+            env: process.env as NodeJS.ProcessEnv,
+            stdio: ['pipe', 'pipe', 'pipe']
+          }) as any;
+
+          pythonProcess.stdout.on('data', (data: Buffer) => {
+            const output = data.toString();
+            console.log('Step Agent Output:', output);
+            outputData += output;
+          });
+
+          pythonProcess.stderr.on('data', (data: Buffer) => {
+            console.error('Step Agent Error:', data.toString());
+          });
+
+          pythonProcess.on('close', (code: number | null) => {
+            if (code === 0) {
+              // Parse the result from output
+              const startMarker = 'STEP_AGENT_RESULT_START';
+              const endMarker = 'STEP_AGENT_RESULT_END';
+              const startIndex = outputData.indexOf(startMarker);
+              const endIndex = outputData.indexOf(endMarker);
+              
+              if (startIndex !== -1 && endIndex !== -1) {
+                const jsonStr = outputData.substring(startIndex + startMarker.length, endIndex).trim();
+                try {
+                  const result = JSON.parse(jsonStr);
+                  resolve(result);
+                } catch (parseError) {
+                  console.error('Failed to parse step agent result:', parseError);
+                  resolve(null);
+                }
+              } else {
+                console.error('Could not find result markers in output');
+                resolve(null);
+              }
+            } else {
+              console.error(`Step Agent exited with code ${code}`);
+              resolve(null);
+            }
+          });
+
+          pythonProcess.on('error', (err: Error) => {
+            console.error('Failed to start Step Agent:', err);
+            resolve(null);
+          });
         });
 
-        pythonProcess.on('error', (err: Error) => {
-          console.error('Failed to start Agent S3:', err);
-          reject(err);
+        // Inspect the step agent result
+        console.log('Step Agent Result:', stepAgentResult);
+        
+        if (!stepAgentResult || 
+            !stepAgentResult.status || 
+            stepAgentResult.status === 'handoff' ||
+            stepAgentResult.status === 'incomplete') {
+          console.log('Step Agent needs fallback - proceeding with Agent S3');
+          shouldFallbackToAgentS = true;
+        } else if (stepAgentResult.status === 'complete') {
+          console.log('Step Agent completed successfully - skipping Agent S3');
+          shouldFallbackToAgentS = false;
+        } else {
+          console.log('Step Agent returned unexpected status - proceeding with Agent S3');
+          shouldFallbackToAgentS = true;
+        }
+
+      } catch (error) {
+        console.error('Step Agent execution failed:', error);
+        shouldFallbackToAgentS = true;
+      }
+
+      // Fallback to Agent S3 if needed
+      if (shouldFallbackToAgentS) {
+        console.log('Executing Agent S3 as fallback...');
+        const agentScriptPath = path.join(appRoot, 'agent-s2-example', 'agent_s3.py');
+
+        // Use remaining steps prompt if available, otherwise use original transcribed text
+        const taskForAgentS3 = stepAgentResult?.handoff?.remaining_steps_prompt || transcribedText;
+        console.log('Task for Agent S3:', taskForAgentS3);
+
+        await new Promise<void>((resolve, reject) => {
+          const pythonProcess = spawn(pythonPath, [agentScriptPath, taskForAgentS3], {
+            env: process.env as NodeJS.ProcessEnv,
+            stdio: 'inherit'
+          }) as any;
+
+          pythonProcess.on('close', (code: number | null) => {
+            if (code === 0) {
+              console.log('Agent S3 completed successfully');
+              resolve();
+            } else {
+              console.error(`Agent S3 exited with code ${code}`);
+              reject(new Error(`Agent S3 exited with code ${code}`));
+            }
+          });
+
+          pythonProcess.on('error', (err: Error) => {
+            console.error('Failed to start Agent S3:', err);
+            reject(err);
+          });
         });
-      });
+      }
 
       return { success: true, text: transcribedText, fullResult: result };
     } else {
