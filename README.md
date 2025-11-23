@@ -24,9 +24,7 @@ JARVIS is a revolutionary desktop agent that brings the power of AI directly to 
 🎤 **Wake Word Detection** - Simply say "Jarvis" to activate your assistant  
 🗣️ **Advanced Speech Recognition** - Powered by Fish Audio's cutting-edge transcription  
 🧠 **Smart Model Switching** - Intelligent routing between fast custom controller and Agent-S for optimal performance  
-⚡ **Lightning Fast Execution** - Custom screen controller delivers 2x faster performance for simple tasks  
 🔄 **Seamless Handoff** - Automatic escalation to Agent-S for complex multi-step reasoning  
-🖥️ **Cross-Platform** - Works on macOS, Windows, and Linux  
 🎯 **Floating UI** - Unobtrusive floating icon with beautiful Siri-like animations  
 
 ---
@@ -199,26 +197,6 @@ const agentConfig = {
   useGrounding: true
 };
 ```
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Here's how you can help:
-
-1. 🍴 Fork the repository
-2. 🌿 Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. 💾 Commit your changes (`git commit -m 'Add amazing feature'`)
-4. 📤 Push to the branch (`git push origin feature/amazing-feature`)
-5. 🔄 Open a Pull Request
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
 
 ## 🙏 Acknowledgments
 
