@@ -33,8 +33,8 @@ function App() {
   // Initialize Porcupine
   useEffect(() => {
     const porcupineKeyword = {
-      publicPath: '/alexa_wasm.ppn',
-      label: 'alexa',
+      publicPath: '/jarvis_wasm.ppn',
+      label: 'jarvis',
     }
 
     const porcupineModel = {
