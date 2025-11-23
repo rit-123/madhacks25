@@ -77,7 +77,7 @@ class ComputerActions:
     
     # ==================== MOUSE ACTIONS ====================
     
-    def move_mouse(self, x: int, y: int, duration: float = 0.5) -> Dict:
+    def move_mouse(self, x: int, y: int, duration: float = 0) -> Dict:
         """
         Move mouse to absolute coordinates.
         

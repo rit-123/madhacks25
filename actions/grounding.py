@@ -1,4 +1,4 @@
-# grounding.py - Add this to your project
+# grounding.py - WITH COORDINATE SCALING
 
 import requests
 import base64
@@ -6,13 +6,42 @@ import re
 import pyautogui
 import io
 import os
+from typing import Dict, Tuple
 
 class GroundingModel:
-    def __init__(self, endpoint_url, hf_token):
+    def __init__(
+        self, 
+        endpoint_url: str, 
+        hf_token: str,
+        model_resolution: Tuple[int, int] = (1920, 1080)  # UI-TARS training resolution
+    ):
         self.endpoint_url = endpoint_url
         self.hf_token = hf_token
+        self.model_width, self.model_height = model_resolution
+        
+        # Get actual screen resolution
+        self.screen_width, self.screen_height = pyautogui.size()
+        
+        print(f"📐 Grounding Model Setup:")
+        print(f"   Model resolution: {self.model_width}x{self.model_height}")
+        print(f"   Screen resolution: {self.screen_width}x{self.screen_height}")
+        print(f"   Scale factor: X={self.screen_width/self.model_width:.2f}, Y={self.screen_height/self.model_height:.2f}")
     
-    def find_coordinates(self, element_description: str) -> tuple[int, int]:
+    def resize_coordinates(self, x: int, y: int) -> Tuple[int, int]:
+        """
+        Scale coordinates from model resolution to screen resolution.
+        
+        Args:
+            x, y: Coordinates in model's resolution (e.g., 1920x1080)
+            
+        Returns:
+            Scaled coordinates for actual screen
+        """
+        scaled_x = round(x * self.screen_width / self.model_width)
+        scaled_y = round(y * self.screen_height / self.model_height)
+        return scaled_x, scaled_y
+    
+    def find_coordinates(self, element_description: str) -> Tuple[int, int]:
         """
         Find coordinates of a UI element from description.
         
@@ -20,7 +49,7 @@ class GroundingModel:
             element_description: Natural language description of what to find
             
         Returns:
-            (x, y) coordinates
+            (x, y) coordinates scaled to your screen resolution
         """
         # Take screenshot
         screenshot = pyautogui.screenshot()
@@ -29,8 +58,11 @@ class GroundingModel:
         screenshot_bytes = buffered.getvalue()
         screenshot_b64 = base64.b64encode(screenshot_bytes).decode('utf-8')
         
-        # Prepare prompt
-        prompt = f"Query:{element_description}\nOutput only the coordinate of one point in your response.\n"
+        # Prepare prompt - TELL THE MODEL THE RESOLUTION
+        prompt = f"""Query:{element_description}
+Output only the coordinate of one point in your response.
+The image resolution is {self.model_width}x{self.model_height}.
+"""
         
         # Call grounding model
         headers = {
@@ -68,16 +100,25 @@ class GroundingModel:
         if response.status_code == 200:
             result = response.json()
             text = result['choices'][0]['message']['content']
+            print(f"   Raw model response: {text}")
             
-            # Parse coordinates
+            # Parse coordinates (these are in model resolution)
             numericals = re.findall(r"\d+", text)
             if len(numericals) >= 2:
-                return int(numericals[0]), int(numericals[1])
+                model_x = int(numericals[0])
+                model_y = int(numericals[1])
+                print(f"   Model coordinates (in {self.model_width}x{self.model_height}): ({model_x}, {model_y})")
+                
+                # Scale to actual screen resolution
+                screen_x, screen_y = self.resize_coordinates(model_x, model_y)
+                print(f"   Scaled coordinates (in {self.screen_width}x{self.screen_height}): ({screen_x}, {screen_y})")
+                
+                return screen_x, screen_y
         
         raise Exception(f"Failed to find coordinates for: {element_description}")
 
 
-# Now integrate with your actions:
+# SmartActions stays the same
 from actions import ComputerActions
 
 class SmartActions(ComputerActions):
