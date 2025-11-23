@@ -118,6 +118,8 @@ RULES:
 - Use wait() after actions that change the UI (1-3 seconds)
 - Be specific in element descriptions
 - Output "done" when goal is accomplished
+- IMPORTANT: To open applications, use open_app("App Name") instead of clicking on dock icons
+- DO NOT click on icons in the dock/taskbar - use open_app() function instead
 
 CRITICAL: Your entire response must be a single JSON object. No text before or after."""
 
@@ -421,6 +423,65 @@ If the cursor is NOT on target, you MUST provide new x,y coordinates that differ
                 "handoff_reason": "exception_during_execution"
             }
     
+    def _generate_remaining_steps_prompt(self, goal: str) -> str:
+        """
+        Generate a prompt describing what steps remain to be completed.
+        """
+        # Build context about what's been done
+        completed_summary = ""
+        if self.history:
+            completed_summary = "COMPLETED STEPS:\n"
+            for i, h in enumerate(self.history, 1):
+                status_str = "✓" if h['status'] == 'success' else "✗" if h['status'] == 'failed' else "🔄"
+                completed_summary += f"{i}. [{status_str}] {h['action']}({h.get('params', {})}) - {h.get('reasoning', '')}\n"
+            completed_summary += "\n"
+        
+        # Ask Claude what remains to be done
+        try:
+            screenshot_b64 = self._screenshot_to_base64()
+            
+            prompt = f"""Goal: {goal}
+
+{completed_summary}Based on the current screenshot and what has been completed so far, what are the REMAINING STEPS needed to accomplish this goal?
+
+Provide a clear, step-by-step list of what still needs to be done. Be specific and actionable.
+
+Format your response as:
+REMAINING STEPS:
+1. [specific action needed]
+2. [next specific action needed]
+etc.
+
+Focus only on what hasn't been done yet."""
+
+            response = self.client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=300,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": "image/jpeg",
+                                    "data": screenshot_b64
+                                }
+                            }
+                        ]
+                    }
+                ]
+            )
+            
+            remaining_steps = response.content[0].text.strip()
+            return remaining_steps
+            
+        except Exception as e:
+            print(f"❌ Failed to generate remaining steps: {e}")
+            return f"Continue from where Step Agent left off to complete: {goal}"
+    
     def run(self, goal: str, max_steps: int = 20) -> Dict[str, Any]:
         """
         Run the agent step-by-step until done or handoff needed.
@@ -477,18 +538,23 @@ If the cursor is NOT on target, you MUST provide new x,y coordinates that differ
             
             # Check if we need to handoff
             if result['status'] == 'handoff':
+                # Generate remaining steps prompt
+                remaining_steps_prompt = self._generate_remaining_steps_prompt(goal)
+                
                 handoff_info = {
                     "action": result['action'],
                     "params": result['params'],
                     "reasoning": result['reasoning'],
                     "goal": goal,
-                    "history": self.history
+                    "history": self.history,
+                    "remaining_steps_prompt": remaining_steps_prompt
                 }
                 print("\n" + "=" * 60)
                 print("🔄 HANDOFF TO GROUNDING SYSTEM")
                 print("=" * 60)
                 print(f"Action needed: {result['action']}")
                 print(f"Description: {result['reasoning']}")
+                print(f"Remaining steps: {remaining_steps_prompt}")
                 break
             
             # Check if done
