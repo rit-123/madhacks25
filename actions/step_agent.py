@@ -408,13 +408,17 @@ If the cursor is NOT on target, you MUST provide new x,y coordinates that differ
             }
             
         except Exception as e:
-            print(f"   ❌ Failed: {e}")
+            print(f"   ❌ Exception occurred: {e}")
+            print(f"   🔄 Routing to handoff...")
+            
+            # Instead of failing, handoff to the other system
             return {
                 "action": action_name,
                 "params": params,
                 "reasoning": reasoning,
                 "error": str(e),
-                "status": "failed"
+                "status": "handoff",
+                "handoff_reason": "exception_during_execution"
             }
     
     def run(self, goal: str, max_steps: int = 20) -> Dict[str, Any]:
@@ -553,8 +557,8 @@ def run_agent(instruction: str, anthropic_api_key: str = None) -> Dict[str, Any]
     
     return result
 
-# run_agent("open chrome and then go to wikiepdia.org, then go to my terminal and list all files")
-
+res = run_agent("go to chrome, go to youtube and search up videos of uw madison")
+print(res)
 # if __name__ == "__main__":
 #     import os
     
